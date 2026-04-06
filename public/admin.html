@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin — DevCraft</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #07060d; --surface: #0e0c17; --surface2: #15121f; --surface3: #1c1828;
+      --border: rgba(255,255,255,0.07); --border-h: rgba(255,255,255,0.13);
+      --accent: #7c6aff; --web: #00d4aa; --discord: #5865F2;
+      --text: #ede8ff; --text-muted: #6b6485; --text-dim: #9d97b8;
+      --danger: #ff5c7c;
+      --font: 'Syne', sans-serif; --mono: 'DM Mono', monospace;
+      --radius: 1.2rem; --radius-sm: 0.7rem;
+    }
+    body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 15px; min-height: 100vh; }
+
+    /* Login */
+    #login-screen {
+      min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem;
+    }
+    .login-box {
+      background: var(--surface); border: 1px solid var(--border-h); border-radius: var(--radius);
+      padding: 2.5rem; width: min(400px, 100%); display: flex; flex-direction: column; gap: 1.2rem; text-align: center;
+    }
+    .login-box h1 { font-size: 1.6rem; font-weight: 700; color: var(--accent); }
+    .login-box p  { font-size: 0.85rem; color: var(--text-muted); margin-top: -0.6rem; }
+    .inp {
+      background: var(--surface2); border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+      color: var(--text); font-family: var(--font); font-size: 0.95rem; padding: 0.85rem 1.1rem; outline: none; width: 100%;
+      transition: border-color 0.2s;
+    }
+    .inp:focus { border-color: var(--accent); }
+    .btn-primary {
+      background: var(--accent); color: #fff; border: none; border-radius: var(--radius-sm);
+      font-family: var(--font); font-size: 0.95rem; font-weight: 600; padding: 0.85rem; cursor: pointer; transition: background 0.2s;
+    }
+    .btn-primary:hover { background: #6957f0; }
+    .login-err { font-size: 0.82rem; color: var(--danger); min-height: 1rem; }
+
+    /* Dashboard */
+    #admin-screen { display: none; min-height: 100vh; flex-direction: column; }
+    .admin-header {
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      padding: 1rem 2rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+      position: sticky; top: 0; z-index: 10;
+    }
+    .admin-title { font-size: 1.1rem; font-weight: 700; color: var(--accent); }
+    .admin-nav { display: flex; gap: 0.5rem; }
+    .filter-btn {
+      background: var(--surface2); border: 1px solid var(--border); border-radius: 99px;
+      color: var(--text-muted); font-family: var(--font); font-size: 0.8rem; padding: 0.4rem 1rem; cursor: pointer; transition: all 0.2s;
+    }
+    .filter-btn.active { border-color: var(--accent); color: var(--accent); }
+    .btn-logout {
+      background: transparent; border: 1px solid var(--border); border-radius: var(--radius-sm);
+      color: var(--text-muted); font-family: var(--font); font-size: 0.8rem; padding: 0.4rem 1rem; cursor: pointer; transition: color 0.2s;
+    }
+    .btn-logout:hover { color: var(--text); }
+
+    .admin-main { padding: 2rem; max-width: 1100px; margin: 0 auto; width: 100%; flex: 1; }
+    .stats-row { display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; }
+    .stat-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 1.2rem 1.6rem; flex: 1; min-width: 140px;
+    }
+    .stat-num { font-size: 2rem; font-weight: 700; color: var(--text); }
+    .stat-label { font-family: var(--mono); font-size: 0.7rem; color: var(--text-muted); letter-spacing: 0.06rem; margin-top: 0.2rem; }
+
+    .requests-list { display: flex; flex-direction: column; gap: 1rem; }
+    .request-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem;
+      transition: border-color 0.2s;
+    }
+    .request-card:hover { border-color: var(--border-h); }
+    .req-header { display: flex; align-items: flex-start; gap: 1rem; justify-content: space-between; }
+    .req-meta { display: flex; flex-direction: column; gap: 0.3rem; }
+    .req-name { font-size: 1.05rem; font-weight: 600; color: var(--text); }
+    .req-contact { font-family: var(--mono); font-size: 0.78rem; color: var(--text-dim); }
+    .req-date { font-family: var(--mono); font-size: 0.72rem; color: var(--text-muted); }
+    .req-actions { display: flex; gap: 0.5rem; flex-shrink: 0; align-items: flex-start; }
+
+    .badge-service {
+      font-family: var(--mono); font-size: 0.7rem; padding: 0.25rem 0.7rem; border-radius: 99px; border: 1px solid;
+    }
+    .badge-discord { color: #8b97f8; border-color: rgba(88,101,242,0.4); background: rgba(88,101,242,0.1); }
+    .badge-website { color: var(--web); border-color: rgba(0,212,170,0.3); background: rgba(0,212,170,0.08); }
+
+    .status-badge {
+      font-family: var(--mono); font-size: 0.68rem; padding: 0.2rem 0.65rem; border-radius: 99px; cursor: pointer;
+      transition: all 0.2s; border: 1px solid; white-space: nowrap;
+    }
+    .status-new  { color: #ffd85c; border-color: rgba(255,216,92,0.35); background: rgba(255,216,92,0.1); }
+    .status-seen { color: #84c77b; border-color: rgba(132,199,123,0.3); background: rgba(132,199,123,0.08); }
+    .status-done { color: var(--text-muted); border-color: var(--border); background: transparent; }
+
+    .req-body { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.8rem; }
+    .req-field { background: var(--surface2); border-radius: var(--radius-sm); padding: 0.75rem 1rem; }
+    .req-field-label { font-family: var(--mono); font-size: 0.65rem; color: var(--text-muted); letter-spacing: 0.06rem; margin-bottom: 0.3rem; }
+    .req-field-value { font-size: 0.88rem; color: var(--text-dim); line-height: 1.5; }
+
+    .req-desc { background: var(--surface2); border-left: 3px solid var(--accent); border-radius: var(--radius-sm); padding: 0.9rem 1rem; }
+    .req-desc .req-field-value { color: var(--text); font-style: italic; }
+
+    .btn-delete {
+      background: transparent; border: 1px solid rgba(255,92,124,0.3); border-radius: var(--radius-sm);
+      color: rgba(255,92,124,0.7); font-size: 0.8rem; padding: 0.3rem 0.7rem; cursor: pointer; transition: all 0.2s;
+    }
+    .btn-delete:hover { background: rgba(255,92,124,0.1); color: var(--danger); border-color: var(--danger); }
+
+    .empty-state {
+      text-align: center; padding: 4rem 2rem; color: var(--text-muted); font-size: 0.95rem;
+    }
+    .empty-state .icon { font-size: 2.5rem; margin-bottom: 0.8rem; }
+
+    .toast {
+      position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%) translateY(80px);
+      background: var(--surface); border: 1px solid var(--border-h); border-radius: 99px;
+      padding: 0.7rem 1.8rem; font-size: 0.88rem; color: var(--text); z-index: 9999;
+      opacity: 0; transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s; pointer-events: none;
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+    @media (max-width: 600px) {
+      .admin-header { flex-wrap: wrap; }
+      .req-header { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <h1>⚙️ Admin Panel</h1>
+    <p>DevCraft — Accès restreint</p>
+    <input class="inp" type="password" id="pwdInput" placeholder="Mot de passe…">
+    <div class="login-err" id="loginErr"></div>
+    <button class="btn-primary" id="loginBtn">Connexion</button>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="admin-screen" style="display:none">
+  <header class="admin-header">
+    <div class="admin-title">⚙️ DevCraft Admin</div>
+    <nav class="admin-nav">
+      <button class="filter-btn active" data-filter="all">Tout</button>
+      <button class="filter-btn" data-filter="new">Nouvelles</button>
+      <button class="filter-btn" data-filter="discord">Discord</button>
+      <button class="filter-btn" data-filter="website">Web</button>
+    </nav>
+    <button class="btn-logout" id="logoutBtn">Déconnexion</button>
+  </header>
+  <main class="admin-main">
+    <div class="stats-row" id="statsRow"></div>
+    <div class="requests-list" id="requestsList"></div>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let token = sessionStorage.getItem("admin_token") || "";
+let allRequests = [];
+let currentFilter = "all";
+
+/* ── AUTH ── */
+document.getElementById("loginBtn").addEventListener("click", tryLogin);
+document.getElementById("pwdInput").addEventListener("keydown", e => { if (e.key === "Enter") tryLogin(); });
+
+async function tryLogin() {
+  const pwd = document.getElementById("pwdInput").value;
+  const res = await fetch("/api/admin/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ password: pwd })
+  });
+  if (res.ok) {
+    const data = await res.json();
+    token = data.token;
+    sessionStorage.setItem("admin_token", token);
+    showDashboard();
+  } else {
+    document.getElementById("loginErr").textContent = "❌ Mot de passe incorrect";
+  }
+}
+
+async function checkToken() {
+  if (!token) return;
+  const res = await fetch("/api/admin/requests", { headers: { "Authorization": `Bearer ${token}` } });
+  if (res.ok) showDashboard();
+  else { token = ""; sessionStorage.removeItem("admin_token"); }
+}
+checkToken();
+
+document.getElementById("logoutBtn").addEventListener("click", () => {
+  token = ""; sessionStorage.removeItem("admin_token");
+  document.getElementById("admin-screen").style.display = "none";
+  document.getElementById("login-screen").style.display = "flex";
+});
+
+async function showDashboard() {
+  document.getElementById("login-screen").style.display = "none";
+  document.getElementById("admin-screen").style.display = "flex";
+  await loadRequests();
+}
+
+/* ── DONNÉES ── */
+async function loadRequests() {
+  const res = await fetch("/api/admin/requests", { headers: { "Authorization": `Bearer ${token}` } });
+  if (!res.ok) return;
+  allRequests = await res.json();
+  renderStats();
+  renderRequests();
+}
+
+function renderStats() {
+  const total   = allRequests.length;
+  const newReqs = allRequests.filter(r => r.status === "new").length;
+  const discord = allRequests.filter(r => r.service === "discord").length;
+  const website = allRequests.filter(r => r.service === "website").length;
+
+  document.getElementById("statsRow").innerHTML = `
+    <div class="stat-card"><div class="stat-num">${total}</div><div class="stat-label">TOTAL DEMANDES</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:var(--web)">${newReqs}</div><div class="stat-label">NOUVELLES</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:#8b97f8">${discord}</div><div class="stat-label">BOTS DISCORD</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:var(--web)">${website}</div><div class="stat-label">SITES WEB</div></div>`;
+}
+
+function renderRequests() {
+  let filtered = allRequests;
+  if (currentFilter === "new")     filtered = allRequests.filter(r => r.status === "new");
+  if (currentFilter === "discord") filtered = allRequests.filter(r => r.service === "discord");
+  if (currentFilter === "website") filtered = allRequests.filter(r => r.service === "website");
+
+  const list = document.getElementById("requestsList");
+  if (!filtered.length) {
+    list.innerHTML = `<div class="empty-state"><div class="icon">📭</div>Aucune demande pour ce filtre.</div>`;
+    return;
+  }
+
+  filtered.sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
+
+  list.innerHTML = filtered.map(r => `
+    <div class="request-card" id="req-${r.id}">
+      <div class="req-header">
+        <div class="req-meta">
+          <div class="req-name">
+            <span class="badge-service badge-${r.service}">${r.service === "discord" ? "🤖 Bot Discord" : "🌐 Site Web"}</span>
+            &nbsp; ${r.prenom || "—"}
+          </div>
+          <div class="req-contact">${r.contact || "—"}</div>
+          <div class="req-date">${new Date(r.created_at).toLocaleString("fr-FR")}</div>
+        </div>
+        <div class="req-actions">
+          <span class="status-badge status-${r.status}" onclick="cycleStatus('${r.id}')">
+            ${{ new: "🟡 Nouvelle", seen: "🟢 Vue", done: "⚫ Traitée" }[r.status]}
+          </span>
+          <button class="btn-delete" onclick="deleteRequest('${r.id}')">🗑</button>
+        </div>
+      </div>
+      <div class="req-body">
+        ${r.type ? `<div class="req-field"><div class="req-field-label">TYPE</div><div class="req-field-value">${r.type}</div></div>` : ""}
+        ${r.hebergement ? `<div class="req-field"><div class="req-field-label">HÉBERGEMENT</div><div class="req-field-value">${r.hebergement === "yes" ? "✅ Oui" : "❌ Non"}</div></div>` : ""}
+        ${r.fonctions?.length ? `<div class="req-field"><div class="req-field-label">FONCTIONS / TECHNO</div><div class="req-field-value">${r.fonctions.join(", ")}</div></div>` : ""}
+        ${r.techno?.length ? `<div class="req-field"><div class="req-field-label">TECHNOLOGIES</div><div class="req-field-value">${r.techno.join(", ")}</div></div>` : ""}
+      </div>
+      ${r.description ? `<div class="req-desc"><div class="req-field-label">DESCRIPTION</div><div class="req-field-value">"${r.description}"</div></div>` : ""}
+    </div>`).join("");
+}
+
+/* ── ACTIONS ── */
+async function deleteRequest(id) {
+  if (!confirm("Supprimer cette demande ?")) return;
+  const res = await fetch(`/api/admin/requests/${id}`, {
+    method: "DELETE",
+    headers: { "Authorization": `Bearer ${token}` }
+  });
+  if (res.ok) {
+    allRequests = allRequests.filter(r => r.id !== id);
+    renderStats(); renderRequests();
+    toast("🗑 Demande supprimée.");
+  }
+}
+
+async function cycleStatus(id) {
+  const r = allRequests.find(x => x.id === id);
+  if (!r) return;
+  const next = { new: "seen", seen: "done", done: "new" }[r.status];
+  const res = await fetch(`/api/admin/requests/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+    body: JSON.stringify({ status: next })
+  });
+  if (res.ok) {
+    r.status = next;
+    renderStats(); renderRequests();
+  }
+}
+
+/* Filtres */
+document.querySelectorAll(".filter-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    currentFilter = btn.dataset.filter;
+    renderRequests();
+  });
+});
+
+/* Toast */
+function toast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 3000);
+}
+
+/* Refresh auto toutes les 30s */
+setInterval(() => { if (token) loadRequests(); }, 30000);
+</script>
+</body>
+</html>
